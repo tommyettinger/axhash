@@ -64,8 +64,19 @@
   #endif
 #endif
 
+//    MX3 multiplier.
+static const uint64_t C = 0xBEA225F9EB34556Dull;
+//    Random 64-bit probable primes, as given by Java's BigInteger class.
+static const uint64_t Q = 0xD1B92B09B92266DDull;
+static const uint64_t R = 0x9995988B72E0D285ull;
+static const uint64_t S = 0x8FADF5E286E31587ull;
+static const uint64_t T = 0xFCF8B405D3D0783Bull;
+
+
 /*
- * From https://stackoverflow.com/a/776523 by Peter Cordes.
+ *  From https://stackoverflow.com/a/776523 by Peter Cordes.
+ *  @param n  the unsigned 64-bit number to bitwise-rotate left.
+ *  @param c  the shift count for how many steps to rotate; should be unsigned.
  */
 AXHASH_INLINE uint32_t ax_rotl64 (uint64_t n, unsigned int c)
 {
@@ -76,7 +87,7 @@ AXHASH_INLINE uint32_t ax_rotl64 (uint64_t n, unsigned int c)
 
 /*
  *  Default seed. This is one of Moremur's multipliers, which is a mixing function by Pelle Evensen.
- * It could be pretty much anything.
+ *  It could be pretty much anything.
  */
 #define AX_SEED (0x3C79AC492BA7B653ull)
 
@@ -85,7 +96,7 @@ AXHASH_INLINE uint32_t ax_rotl64 (uint64_t n, unsigned int c)
  *
  *  @param x  unsigned 64-bit number.
  */
-AXHASH_INLINE uint64_t mix(uint64_t x) AXHASH_NOEXCEPT {
+AXHASH_INLINE uint64_t ax_mix(uint64_t x) AXHASH_NOEXCEPT {
   AXHASH_CONSTEXPR unsigned int R0 = 23u;
   AXHASH_CONSTEXPR unsigned int R1 = 43u;
   AXHASH_CONSTEXPR unsigned int R2 = 11u;
@@ -102,7 +113,7 @@ AXHASH_INLINE uint64_t mix(uint64_t x) AXHASH_NOEXCEPT {
  *  @param h  unsigned 64-bit number; typically a value being accumulated onto.
  *  @param x  unsigned 64-bit number; typically a datum that should be incorporated with mixing into @h .
  */
-AXHASH_INLINE uint64_t mix_stream(uint64_t h, uint64_t x) AXHASH_NOEXCEPT {
+AXHASH_INLINE uint64_t ax_mix_stream(uint64_t h, uint64_t x) AXHASH_NOEXCEPT {
   AXHASH_CONSTEXPR unsigned int R1 = 39u;
   x *= C;
   x ^= (x >> R1);
@@ -121,7 +132,7 @@ AXHASH_INLINE uint64_t mix_stream(uint64_t h, uint64_t x) AXHASH_NOEXCEPT {
  *  @param c  unsigned 64-bit number; will be mixed with a and b.
  *  @param d  unsigned 64-bit number; will be mixed with a and b.
  */
-AXHASH_INLINE uint64_t mix_stream_bulk(uint64_t h, uint64_t a, uint64_t b, uint64_t c, uint64_t d) AXHASH_NOEXCEPT {
+AXHASH_INLINE uint64_t ax_mix_stream_bulk(uint64_t h, uint64_t a, uint64_t b, uint64_t c, uint64_t d) AXHASH_NOEXCEPT {
   AXHASH_CONSTEXPR unsigned int R2 = 29u;
   return h
          + (ax_rotl64(a, R2) - c) * Q
@@ -171,8 +182,37 @@ AXHASH_INLINE uint64_t ax_read16(const uint8_t *p) AXHASH_NOEXCEPT {
  *  Returns a 64-bit hash.
  */
 AXHASH_INLINE uint64_t axhash_internal(const void *key, size_t len, uint64_t seed) AXHASH_NOEXCEPT {
-  // TODO: Fill this in with the actual code!
-  return seed;
+  AXHASH_CONSTEXPR unsigned int R1 = 37u;
+  const uint8_t *buf=(const uint8_t *)key; 
+  uint64_t h = len ^ seed;
+
+  while (len >= 64) {
+    len -= 64;
+    h = ax_mix_stream_bulk(h * C, ax_read64(buf), ax_read64(buf+8),
+        ax_read64(buf+16), ax_read64(buf+24));
+    h = ax_mix_stream_bulk(ax_rotl64(h, R1), ax_read64(buf+32), ax_read64(buf+40),
+        ax_read64(buf+48), ax_read64(buf+56));
+    buf += 64;
+  }
+
+  while (len >= 8) {
+    len -= 8;
+    h = ax_mix_stream(h, ax_read64(buf));
+    buf += 8;
+  }
+    
+  const uint8_t* const tail8 = buf;
+  switch (len) {
+  case 1: h = (ax_mix_stream(h, tail8[0]));                                                                                                       break;
+  case 2: h = (ax_mix_stream(h, ax_read16(tail8, 0)));                                                                                            break;
+  case 3: h = (ax_mix_stream(h, ax_read16(tail8, 0) | static_cast<uint64_t>(tail8[2]) << 16));                                                    break;
+  case 4: h = (ax_mix_stream(h, ax_read32(tail8, 0)));                                                                                            break;
+  case 5: h = (ax_mix_stream(h, ax_read32(tail8, 0) | static_cast<uint64_t>(tail8[4]) << 32));                                                    break;
+  case 6: h = (ax_mix_stream(h, ax_read32(tail8, 0) | static_cast<uint64_t>(ax_read16(tail8, 4)) << 32));                                         break;
+  case 7: h = (ax_mix_stream(h, ax_read32(tail8, 0) | static_cast<uint64_t>(ax_read16(tail8, 4)) << 32 | static_cast<uint64_t>(tail8[6]) << 48)); break;
+  default:;
+  }
+  return ax_mix(h);
 }
 
 /*
@@ -180,9 +220,13 @@ AXHASH_INLINE uint64_t axhash_internal(const void *key, size_t len, uint64_t see
  *
  *  @param key     Buffer to be hashed.
  *  @param len     @key length, in bytes.
- *  @param seed    64-bit seed used to alter the hash result predictably.
+ *  @param seed    64-bit seed used to alter the hash result predictably; will be mixed a little.
  *
  *  Calls axhash_internal using provided parameters, but does some mixing to seed.
+ *  This is, in fact, nearly identical to axhash_internal, except that this
+ *  function mixes seed with a XOR-Rotate-XOR-Rotate step. If you are confident that your seed is not going
+ *  to be used in conjunction with other extremely similar seeds (such as seed, seed+1, seed+2, etc.), then
+ *  you can call axhash_internal directly with your unmixed seed to save a few cycles.
  *
  *  Returns a 64-bit hash.
  */
