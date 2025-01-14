@@ -1,16 +1,22 @@
 # axhash
 Chop down tall trees? Chop down big keys.
 
-Much fast. Very hashing. Such independence. Wow.
+Much fast. Very hashing. Such platform. Wow.
 
 ## What is it?
 It's a non-cryptographic hashing algorithm! Axhash is based loosely on [MX3.v3 by Jon Maiga](https://github.com/jonmaiga/mx3).
-The mix_stream method should be the same, though everything else is different. Unlike stock MX3.v3, axhash passes all tests in
-[SMHasher 3](https://gitlab.com/fwojcik/smhasher3). It also just happens to be the fastest passing hash on small keys, while
-also having 3x the throughput of the previous #1 hash, [rapidhash](https://github.com/Nicoshev/rapidhash), on large keys
-(bulk, 262144-bytes).
+The ax_mix_stream method should be the same as MX3.v3's mix_stream, though everything else is different. Unlike stock MX3.v3,
+axhash passes all tests in [SMHasher 3](https://gitlab.com/fwojcik/smhasher3). It also just happens to be the fastest
+passing hash on small keys, while also having 3x the throughput of the previous #1 hash,
+[rapidhash](https://github.com/Nicoshev/rapidhash), on large keys (bulk, 262144-bytes).
+
+You can see the SMHasher 3 code in [this (messy) C++ file](https://github.com/tommyettinger/smhasher-with-junk/blob/9d4e28b460dc6a70106372e1b836a91b3d70238e/smhasher3/hashes/ax.cpp#L50-L211)
+in my GitHub clone of the GitLab SMHasher 3 repo. This repo has the same code used to test with SMHasher 2, which is compatible
+with both C and C++.
 
 ## Test results
+
+For axhash with SMHasher 3:
 
 ```
 ----------------------------------------------------------------------------------------------
@@ -32,7 +38,10 @@ Overall result: pass            ( 188 / 188 passed)
 Verification value is 0x00000001 - Testing took 384.370490 seconds
 ```
 
-### Speed results
+The test results for SMHasher 2 aren't summarized nicely, but axhash passes 100% of its tests.
+The same is true for rapidhash.
+
+## SMHasher 3 Speed results
 
 These were run on a "workstation laptop" running Windows 11 with a 12th Gen Intel(R)
 Core(TM) i7-12800H 2.40 GHz processor. It has 6 performance cores and 8 low-power cores.
@@ -180,7 +189,14 @@ Average       -  4.02 bytes/cycle - 13.10 GiB/sec @ 3.5 ghz
 Alignment rnd -  3.95 bytes/cycle - 12.88 GiB/sec @ 3.5 ghz
 ```
 
-### License
+SMHasher 2 seems to rate performance differently than SMHasher 3. In version 2, rapidhash is much
+faster than it is in version 3. The opposite is true for axhash; it is has about 25%-30% lower
+bulk throughput in version 2 compared to version 3, and is only slightly faster on short hashes as well
+(average small key speed is 20.112 cycles/hash in SMHasher 2, or 24.47 in SMHasher 3, but the range
+tested is different. Compare with rapidhash, which performs drastically better in SMHasher 2, getting
+average small key speed of 16.005 cycles/hash.)
+
+## License
 [CC0](LICENSE). You can freely use this for any purpose, even commercial closed-source apps.
 Because it is public domain under CC0, I am not liable if it doesn't do exactly what you want;
 after all, public domain means it belongs to you as much as it does to me.
@@ -192,6 +208,22 @@ missing cross-platform/multiple-compiler functionality in C. Rapidhash is licens
 BSD 2-Clause license. If a legal body rules that makes this algorithm also licensed under the
 BSD 2-Clause license, that won't be a problem because CC0 allows freely relicensing code, and
 BSD 2-Clause is similarly lenient (it also allows usage in commercial closed-source apps).
+
+## Help
+I am not a terribly skilled C programmer! I do most of my work in Java, and the entire goal I had
+in creating axhash was to have a good algorithm I could port to Java without needing any
+hardware-sensitive instructions like those for AES or carryless multiplication. I would really like
+to be able to at least explain, or preferably address, the performance loss that seems to be present
+in SMHasher v2. The v3 test makes heavy use of the predefined, rather elegant C++ solutions for the
+patchwork of functions to retrieve a unsigned integer from a buffer, or to bitwise-rotate a word.
+These may perform much better than the jury-rigged bitwise-rotation function here, or even the
+fairly-standard get-from-buffer functions. It could be a cmake issue, where the compiler for v2
+can't use all the same features that v3 can.
+
+**If anyone wants to discuss performance here, please post an issue!** Or submit a pull request if
+you're really confident it will work. Even what might seem like basic tips are probably new to me,
+when it comes to C and C++. I would love to get axhash even faster, especially gaining speed
+reliably in both C and C++!
 
 ## Snark
 

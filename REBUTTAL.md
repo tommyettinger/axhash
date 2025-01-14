@@ -1,22 +1,22 @@
 ~~rapidhash~~ (axhash) - Very fast, high quality, platform-independent
 ====
 
-(A rebuttal.)
+(A rebuttal, in the form of commentary on the rapidhash README.md .)
 ===
 
-(Faster than) The fastest recommended hash function by [SMHasher](https://github.com/rurban/smhasher?tab=readme-ov-file#summary).  
+The fastest recommended hash function by (the old version of) [SMHasher](https://github.com/rurban/smhasher?tab=readme-ov-file#summary).  
 
-(Still faster than) The fastest passing hash in [SMHasher3](https://gitlab.com/fwojcik/smhasher3/-/blob/main/results/README.md#passing-hashes).  
+(Still faster than) The fastest passing hash in (the new version of) [SMHasher3](https://gitlab.com/fwojcik/smhasher3/-/blob/main/results/README.md#passing-hashes).  
 
 rapidhash is [wyhash](https://github.com/wangyi-fudan/wyhash)' official successor, with improved speed, quality and compatibility.
 
 (That's great! Here's some encouragement to keep improving speed!)
 
 **Fast**  
-Extremely fast for both short and large inputs. (But, ax is much faster.)
-The fastest hash function passing all tests in [SMHasher](https://github.com/rurban/smhasher?tab=readme-ov-file#smhasher). (If you completely ignore large keys.)
-The fastest hash function passing all tests in [SMHasher3](https://gitlab.com/fwojcik/smhasher3/-/blob/main/results/README.md#passing-hashes). (If you ignore both large and small keys, sure.)
-About 6% higher throughput than wyhash according to SMHasher and SMHasher3 reports. (And axhash is 32% faster on short hashes, or **200% faster** on bulk hashes.)
+Extremely fast for both short and large inputs. (But, ax is much faster in recent tests.)
+The fastest hash function passing all tests in [SMHasher](https://github.com/rurban/smhasher?tab=readme-ov-file#smhasher). (In this older test suite, yes, rapidhash is faster than axhash.)
+The fastest hash function passing all tests in [SMHasher3](https://gitlab.com/fwojcik/smhasher3/-/blob/main/results/README.md#passing-hashes). (In this newer test suite, axhash is all-around faster.)
+About 6% higher throughput than wyhash according to SMHasher and SMHasher3 reports. (And axhash is 32% faster than rapidhash on short hashes, or **200% faster** on bulk hashes.)
 
 **Universal**  
 Optimized for both AMD64 and modern AArch64 systems. (Good!)
@@ -25,10 +25,11 @@ It does not use machine-specific vectorized or cryptographic instruction sets. (
 Prepared for both C and C++ compilation. (Same here!)
 
 **Excellent**  
-Passes all tests in ~~both [SMHasher](https://github.com/rurban/smhasher/blob/master/doc/rapidhash.txt)~~ (I haven't tried the older SMHasher 2 yet) and [SMHasher3](https://gitlab.com/fwojcik/smhasher3/).  
+Passes all tests in both [SMHasher](https://github.com/rurban/smhasher/blob/master/doc/rapidhash.txt) (True for rapidhash and axhash.) and [SMHasher3](https://gitlab.com/fwojcik/smhasher3/) (Still true for rapidhash and axhash.).  
 (Only for rapidhash:)
 [Collision-based study](https://github.com/Nicoshev/rapidhash/tree/master?tab=readme-ov-file#collision-based-hash-quality-study) showed a collision probability lower than wyhash and close to ideal.  
-Outstanding collision ratio when tested with datasets of 16B and 66B keys: (But this data doesn't show that at all? Over 50% more collisions than expected for 62Gi of 64 and 256 as inputs?)
+Outstanding collision ratio when tested with datasets of 16B and 66B keys: (But this data doesn't show that, if I'm not mistaken? Should rapidhash have over 50% more collisions than expected for 62Gi of 64 and 256 as inputs?
+And in no case does it have 50% fewer collisions?)
 
 | Input Len | Nb Hashes | Expected | Nb Collisions | 
 | --- | ---   | ---   | --- | 
@@ -53,4 +54,4 @@ Outstanding collision ratio when tested with datasets of 16B and 66B keys: (But 
 
 ~~More results can be found in the [collisions folder](https://github.com/Nicoshev/rapidhash/tree/master/collisions)~~ (Not in this repo, in the rapidhash one.)
 
-(The actual data for axhash will be in README.md soon.)
+(The actual data for axhash is in README.md.)
